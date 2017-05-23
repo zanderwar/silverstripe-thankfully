@@ -34,7 +34,9 @@ Run a dev/build afterwards
             - 'ThankfullyControllerExtension'
     ```
 3. Run a `?flush=1`
-4. Open the page that has `ContactPage` (in this example) as the type and you will now see a "Thank You" tab
+4. Open the page that has `ContactPage` (in this example) as the type within the CMS and you will now see a "Thank You" tab
+
+In your controller (in this example `ContactPage_Controller`) you now have access to the method `$this->getThankYouPage()` which you can then immediately `return $this->redirect($this->getThankYouPage()->Link())`. This would most commonly be done in a form processing method
 
 If the page title and/or content is not set in the page with the extension, it will fallback to the values set in the `Thank You (Generic)` that the dev/build created in the root of your site tree, if no defaults are configured, then the visitor will get a bit of an ugly experience
 
