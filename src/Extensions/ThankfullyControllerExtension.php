@@ -17,8 +17,8 @@ class ThankfullyControllerExtension extends Extension
         /** @var ThankfullyPage $page */
         $page = ThankfullyPage::get()->first();
 
-        $page->setTitle(($this->owner->ThankYouTitle) ? $this->owner->ThankYouTitle : $page->Title);
-        $page->setContent(($this->owner->ThankYouContent) ? $this->owner->ThankYouContent : $page->Content);
+        $page->setPageTitle(($this->owner->ThankYouTitle) ? $this->owner->ThankYouTitle : $page->Title);
+        $page->setPageContent(($this->owner->ThankYouContent) ? $this->owner->ThankYouContent : $page->Content);
         $page->setReturnTo($this->owner->Link());
         $page->setQueryString(
             ThankfullyQueryStringPair::get()->filter('PageID', $this->owner->ID)->map('Key', 'Value')->toArray()
