@@ -38,8 +38,8 @@ class ThankfullyPage extends Page
         }
 
         $page->setIsThankful();
-        $page->setTitle($title);
-        $page->setContent($content);
+        $page->setPageTitle($title);
+        $page->setPageContent($content);
         $page->setReturnTo($returnTo);
         $page->setQueryString($queryStringPairs);
 
@@ -95,8 +95,11 @@ class ThankfullyPage extends Page
         $existingThankYouPage = self::get()->first();
 
         if (!$existingThankYouPage) {
+            Versioned::reading_stage('Stage');
+
             $page = ThankfullyPage::create();
             $page->Title = 'Thank You';
+            $page->MenuTitle = 'Thank You';
             $page->URLSegment = 'thank-you';
             $page->ShowInMenus = 0;
             $page->ShowInSearch = 0;
@@ -132,7 +135,7 @@ class ThankfullyPage extends Page
         if ($bool) {
             Session::set('Thankfully.ShouldBeThankful', true);
         } else {
-            unset($_SESSION['ShouldBeThankful']);
+            unset($_SESSION['Thankfully']['ShouldBeThankful']);
         }
 
         return $this;
@@ -146,7 +149,7 @@ class ThankfullyPage extends Page
      *
      * @return $this
      */
-    public function setTitle($title)
+    public function setPageTitle($title)
     {
         Session::set('Thankfully.PageTitle', $title);
 
@@ -158,7 +161,7 @@ class ThankfullyPage extends Page
      *
      * @return $this
      */
-    public function setContent($content)
+    public function setPageContent($content)
     {
         Session::set('Thankfully.PageContent', $content);
 
