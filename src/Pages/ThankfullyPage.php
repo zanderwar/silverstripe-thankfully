@@ -15,6 +15,14 @@ class ThankfullyPage extends Page
     /** @var string */
     private static $description = 'This page is created automatically and is used to generate a Thank You page based on certain parameters provided at the time.';
 
+    /** @var array */
+    private static $defaults = array(
+        'ShowInMenu' => false,
+        'ShowInSearch' => false,
+        'Title' => 'Thankfully',
+        'MenuTitle' => 'Thankfully'
+    );
+
     /**
      * Allows a developer to easily configure the Thank You page
      *
@@ -98,8 +106,6 @@ class ThankfullyPage extends Page
             Versioned::reading_stage('Stage');
 
             $page = ThankfullyPage::create();
-            $page->Title = 'Thank You';
-            $page->MenuTitle = 'Thank You';
             $page->URLSegment = 'thank-you';
             $page->ShowInMenus = 0;
             $page->ShowInSearch = 0;

@@ -1,0 +1,3 @@
+ThankfullyPage:
+  default_page:
+    URLSegment: 'thank-you'

@@ -5,10 +5,13 @@
  */
 class ThankfullyPageTest extends SapphireTest
 {
+    public static $fixture_file = 'ThankfullyPageTest.yml';
+
     public function testThankfullyPage()
     {
-        $page = ThankfullyPage::get()->first();
+        /** @var ThankfullyPage $page */
+        $page = $this->objFromFixture('ThankfullyPage', 'default_page');
 
-        $this->assertTrue(!$page, 'The default page was not created');
+        $this->assertTrue(($page->URLSegment == 'thank-you'));
     }
 }
