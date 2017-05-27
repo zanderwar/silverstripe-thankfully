@@ -20,6 +20,6 @@ class ThankfullyPageTest extends SapphireTest
         $page->setQueryString($queryString);
 
         $this->assertTrue((Session::get('Thankfully.PageQueryString') == $queryString), 'The query string was not saved to session correctly');
-        $this->assertTrue(strstr('?k=v&z=w', $page->Link()), 'The query string was not appended to the link');
+        $this->assertContains('?k=v&z=w', $page->Link(), 'The query string was not appended to the link');
     }
 }
