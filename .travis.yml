@@ -27,4 +27,4 @@
     - composer install
 
   script:
-    - vendor/bin/phpunit mbp/tests/
+    - vendor/bin/phpunit thankfully/tests/

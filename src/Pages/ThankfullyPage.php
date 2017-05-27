@@ -4,47 +4,30 @@
  * Class ThankfullyPage
  *
  * @author Reece Alexander <reece@steadlane.com.au>
+ * @method HasManyList QueryStrings
  */
 class ThankfullyPage extends Page
 {
     /** @var array */
     private static $db = array(
-        'ForceDefaults' => 'Boolean'
+        'AlwaysAllowed' => 'Boolean'
     );
 
     /** @var string */
     private static $description = 'This page is created automatically and is used to generate a Thank You page based on certain parameters provided at the time.';
 
-    /**
-     * Allows a developer to easily configure the Thank You page
-     *
-     * @param $title
-     * @param $content
-     * @param string|Page|null $returnTo
-     * @param array|null $queryStringPairs An array of key value pairs used to form a query string
-     *
-     * @return static
-     */
-    public static function prepare($title, $content, $returnTo = null, array $queryStringPairs = array())
-    {
-        /** @var static $page */
-        $page = static::get()->first();
+    /** @var array */
+    private static $defaults = array(
+        'ShowInMenus' => false,
+        'ShowInSearch' => false
+    );
 
-        if (!$page) {
-            user_error(
-                'A ThankfullyPage does not exist. Please run a dev/build first.',
-                E_USER_ERROR
-            );
-        }
+    private static $has_many = array(
+        'QueryStrings' => 'ThankfullyQueryStringPair'
+    );
 
-        $page->setIsThankful();
-        $page->setPageTitle($title);
-        $page->setPageContent($content);
-        $page->setReturnTo($returnTo);
-        $page->setQueryString($queryStringPairs);
-
-        return $page;
-    }
+    /** @var string A url that can be provided to the interface to return to */
+    protected $returnTo;
 
     /**
      * @return FieldList
@@ -60,67 +43,30 @@ class ThankfullyPage extends Page
             )
         );
 
-        /** @var TextField $titleField */
-        $titleField = $fields->dataFieldByName('Title');
-        $titleField->setTitle('Default Title');
-        $titleField->setRightTitle('This title will be used as a default, however it can be overridden by the pages that send visitors here.');
-
         /** @var TextField $segmentField */
         $segmentField = $fields->dataFieldByName('URLSegment');
         $segmentField->setRightTitle('You can modify this without affecting anything that links here');
 
         /** @var HtmlEditorField $contentField */
         $contentField = $fields->dataFieldByName('Content');
-        $contentField->setTitle('Default Content');
-        $contentField->setRightTitle('This content will be used as a default, however it can be overridden by the pages that send visitors here.');
         $contentField->setRows(5);
+
+        $gridField = GridField::create(
+            'QueryStringEditor',
+            'Query String Editor',
+            $this->QueryStrings(),
+            GridFieldConfig_RecordEditor::create()
+        );
 
         $fields->addFieldsToTab(
             'Root.Main',
             array(
-                CheckboxField::create('ForceDefaults', 'Force Defaults?')
+                DropdownField::create('AlwaysAllowed', 'Always Allowed?', array('Disabled', 'Enabled'))->setRightTitle('If enabled, a visitor can view this page with no reason to be thanked'),
+                $gridField
             )
         );
 
         return $fields;
-    }
-
-    /**
-     * Create the page if it does not exist
-     */
-    public function requireDefaultRecords()
-    {
-        parent::requireDefaultRecords();
-
-        $existingThankYouPage = self::get()->first();
-
-        if (!$existingThankYouPage) {
-            Versioned::reading_stage('Stage');
-
-            $page = ThankfullyPage::create();
-            $page->Title = 'Thank You';
-            $page->MenuTitle = 'Thank You';
-            $page->URLSegment = 'thank-you';
-            $page->ShowInMenus = 0;
-            $page->ShowInSearch = 0;
-            $page->write();
-            $page->publish('Stage', 'Live');
-
-            DB::alteration_message('Default Thank You Page Created', 'created');
-        }
-    }
-
-    /**
-     * Static accessor to rapidly retrieve the first record
-     *
-     * @return static
-     */
-    public static function getFirst()
-    {
-        /** @var static $first */
-        $first = static::get()->first();
-
-        return $first;
     }
 
     /**
@@ -130,40 +76,13 @@ class ThankfullyPage extends Page
      *
      * @return $this
      */
-    public function setIsThankful($bool = true)
+    public function setAllowed($bool = true)
     {
         if ($bool) {
-            Session::set('Thankfully.ShouldBeThankful', true);
+            Session::set('Thankfully.Allowed_' . $this->ID, true);
         } else {
-            unset($_SESSION['Thankfully']['ShouldBeThankful']);
+            unset($_SESSION['Thankfully']['Allowed_' . $this->ID]);
         }
-
-        return $this;
-    }
-
-    /**
-     * Sets the Page title. If not provided will fallback to the default.
-     * If no default is found then the page will have no title!
-     *
-     * @param $title
-     *
-     * @return $this
-     */
-    public function setPageTitle($title)
-    {
-        Session::set('Thankfully.PageTitle', $title);
-
-        return $this;
-    }
-
-    /**
-     * @param $content
-     *
-     * @return $this
-     */
-    public function setPageContent($content)
-    {
-        Session::set('Thankfully.PageContent', $content);
 
         return $this;
     }
@@ -172,28 +91,17 @@ class ThankfullyPage extends Page
      * Set the "return to" URL. A user won't be automatically redirected here instead the template is
      * given a $ReturnTo method which can be used to provide a "Return to Previous Page" button
      *
-     * @param string|Page $url
+     * @param string|Page $returnTo
      *
      * @return $this
      */
-    public function setReturnTo($url)
+    public function setReturnTo($returnTo)
     {
-        if ($url instanceof Page) {
-            $url = $url->Link();
+        if ($returnTo instanceof Page) {
+            $returnTo = $returnTo->Link();
         }
 
-        Session::set('Thankfully.PageReturnTo', $url);
-
-        return $this;
-    }
-
-    /**
-     * @param array $keyValuePair
-     * @return $this
-     */
-    public function setQueryString(array $keyValuePair)
-    {
-        Session::set('Thankfully.PageQueryString', $keyValuePair);
+        Session::set('Thankfully.PageReturnTo_' . $this->ID, $returnTo);
 
         return $this;
     }
@@ -208,11 +116,18 @@ class ThankfullyPage extends Page
     {
         $link = parent::Link($action);
 
-        if (!Session::get('Thankfully.PageQueryString')) {
+        if (!$this->QueryStrings()->count()) {
             return $link;
         }
 
-        $query = http_build_query(Session::get('Thankfully.PageQueryString'));
+        $queryStrings = array();
+
+        /** @var ThankfullyQueryStringPair $queryString */
+        foreach ($this->QueryStrings() as $queryString) {
+            $queryStrings[$queryString->Key] = $queryString->Value;
+        }
+
+        $query = http_build_query($queryStrings);
 
         return $link . '?' . $query;
     }
@@ -222,6 +137,8 @@ class ThankfullyPage extends Page
  * Class ThankfullyPage_Controller
  *
  * @author Reece Alexander <reece@steadlane.com.au>
+ * @method HasManyList QueryStrings
+ * @method Page Parent
  */
 class ThankfullyPage_Controller extends Page_Controller
 {
@@ -237,37 +154,33 @@ class ThankfullyPage_Controller extends Page_Controller
      */
     public function index()
     {
-        if (!Session::get('Thankfully.ShouldBeThankful')) {
+        if (!$this->AlwaysAllowed && !Session::get('Thankfully.Allowed_' . $this->ID)) {
             return $this->render(
                 array(
-                    'Title' => 'Woops!',
-                    'Content' => 'You have reached this page incorrectly'
+                    'Title' => _t('Thankfully.PageNotReadyTitle', 'Woops!'),
+                    'Content' => _t('Thankfully.PageNotReadyContent', 'You have reached this page incorrectly'),
+                    'ReturnTo' => $this->getReturnTo()
                 )
             );
         }
 
-        $params = Thankfully::getSession()->toMap();
-        Thankfully::destroySession();
+        $params = array(
+            'Allowed' => true,
+        );
+
+        $this->data()->setAllowed(false);
+
+        unset($_SESSION['Thankfully']['PageReturnTo_' . $this->ID]);
 
         return $this->render($params);
     }
 
     /**
-     * Link override to include query string for conversion tracking
-     *
-     * @param null $action
-     * @return string
+     * @return null|string
      */
-    public function Link($action = null)
+    public function getReturnTo()
     {
-        $link = parent::Link($action);
-
-        if (!Session::get('Thankfully.PageQueryString')) {
-            return $link;
-        }
-
-        $query = http_build_query(Session::get('Thankfully.PageQueryString'));
-
-        return $link . '?' . $query;
+        $customReturnTo = Session::get('Thankfully.PageReturnTo_' . $this->ID);
+        return ($customReturnTo) ? $customReturnTo : (($this->Parent()->exists()) ? $this->Parent()->Link() : null);
     }
 }
