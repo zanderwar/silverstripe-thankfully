@@ -25,7 +25,7 @@ class ThankfullyQueryStringPair extends DataObject
 
     /** @var array */
     private static $has_one = array(
-        'Page' => 'Page'
+        'Page' => 'ThankfullyPage'
     );
 
     /** @var array */

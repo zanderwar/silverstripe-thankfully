@@ -7,56 +7,30 @@
  */
 class ThankfullyExtension extends DataExtension
 {
-    /** @var array */
-    private static $db = array(
-        'ThankYouTitle' => 'Varchar(255)',
-        'ThankYouContent' => 'HTMLText',
-    );
-
-    /** @var array */
-    private static $has_many = array(
-        'QueryStrings' => 'ThankfullyQueryStringPair'
-    );
-
-    /**
-     * {@inheritdoc}
-     *
-     * @param FieldList $fields
-     */
-    public function updateCMSFields(FieldList $fields)
+    public function requireDefaultRecords()
     {
-        parent::updateCMSFields($fields);
+        parent::requireDefaultRecords();
 
-        $gridField = GridField::create(
-            'QueryStringEditor',
-            'Query String Editor',
-            ThankfullyQueryStringPair::get()->filter('PageID', $this->owner->ID),
-            GridFieldConfig_RecordEditor::create()
-        );
+        $existingPages = $this->owner->get();
 
-        $parentID = $this->owner->ID;
+        /** @var Page $existingPage */
+        foreach ($existingPages as $existingPage) {
+            /** @var ThankfullyPage $page */
+            $page = ThankfullyPage::get()->filter('ParentID', $existingPage->ID)->first();
 
-        /** @var GridFieldDetailForm $detailForm */
-        $detailForm = $gridField->getConfig()->getComponentByType('GridFieldDetailForm');
-        $detailForm->setItemEditFormCallback(function ($form) use ($parentID) {
-            /** @var Form $form */
-            $fields = $form->Fields();
-            $fields->removeByName('PageID');
-            $fields->addFieldsToTab(
-                'Root.Main',
-                array(
-                    HiddenField::create('PageID', 'PageID', $parentID)
-                )
-            );
-        });
+            if (!$page) {
+                Versioned::reading_stage('Stage');
+                $page = ThankfullyPage::create();
+                $page->Title = _t('Thankfully.DefaultPageTitle', 'Thank You');
+                $page->MenuTitle = _t('Thankfully.DefaultPageTitle', 'Thank You');
+                $page->Content = '<p>' . _t('Thankfully.DefaultPageFirstParagraph', 'Thank you for your submission') . '</p>';
+                $page->URLSegment = 'thank-you';
+                $page->ParentID = $existingPage->ID;
+                $page->write();
+                $page->publish('Stage', 'Live');
 
-        $fields->addFieldsToTab(
-            'Root.ThankYou',
-            array(
-                TextField::create('ThankYouTitle', 'Page Title')->setRightTitle('If left blank, the default will be assumed'),
-                HtmlEditorField::create('ThankYouContent', 'Page Content')->setRows(5)->setRightTitle('If left blank, the default will be assumed'),
-                $gridField
-            )
-        );
+                DB::alteration_message(sprintf('Thank You page for %s has been created', get_class($this->owner)), 'created');
+            }
+        }
     }
 }
