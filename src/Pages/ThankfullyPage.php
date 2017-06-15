@@ -10,7 +10,8 @@ class ThankfullyPage extends Page
 {
     /** @var array */
     private static $db = array(
-        'AlwaysAllowed' => 'Boolean'
+        'AlwaysAllowed' => 'Boolean',
+        'ConversionScript'=>'HTMLText'
     );
 
     /** @var string */
@@ -62,7 +63,8 @@ class ThankfullyPage extends Page
             'Root.Main',
             array(
                 DropdownField::create('AlwaysAllowed', 'Always Allowed?', array('Disabled', 'Enabled'))->setRightTitle('If enabled, a visitor can view this page with no reason to be thanked'),
-                $gridField
+                $gridField,
+                TextareaField::create('ConversionScript','Add conversion scripts here.')
             )
         );
 
